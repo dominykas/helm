@@ -52,7 +52,7 @@ func (g *GitGetter) ensureGitDirIgnored(repoPath string) error {
 	return nil
 }
 
-//Get performs a Get from repo.Getter and returns the body.
+// Get performs a Get from repo.Getter and returns the body.
 func (g *GitGetter) Get(href string, options ...Option) (*bytes.Buffer, error) {
 	for _, opt := range options {
 		opt(&g.opts)
