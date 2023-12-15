@@ -21,7 +21,7 @@ import (
 )
 
 func TestIsGitUrl(t *testing.T) {
-	// Test table: Given url, IsGitURL should return expect.
+	// Test table: Given url, IsGitRepository should return expect.
 	tests := []struct {
 		url    string
 		expect bool
@@ -32,7 +32,7 @@ func TestIsGitUrl(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if IsGitURL(test.url) != test.expect {
+		if IsGitRepository(test.url) != test.expect {
 			t.Errorf("Expected %t for %s", test.expect, test.url)
 		}
 	}

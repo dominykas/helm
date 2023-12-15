@@ -23,6 +23,7 @@ import (
 	"github.com/Masterminds/vcs"
 )
 
+// HasGitReference returns true if a git repository contains a specified ref (branch/tag)
 func HasGitReference(gitRepo, ref, repoName string) (bool, error) {
 	local, err := os.MkdirTemp("", repoName)
 	if err != nil {
@@ -41,7 +42,12 @@ func HasGitReference(gitRepo, ref, repoName string) (bool, error) {
 	return repo.IsReference(ref), nil
 }
 
-func IsGitURL(url string) bool {
-
+// IsGitRepository determines whether a URL is to be treated as a git repository URL
+func IsGitRepository(url string) bool {
 	return strings.HasPrefix(url, "git://")
+}
+
+// RepositoryURLToGitURL converts a repository URL into a URL that `git clone` could consume
+func RepositoryURLToGitURL(url string) string {
+	return strings.TrimPrefix(url, "git://")
 }

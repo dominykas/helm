@@ -97,7 +97,7 @@ func (c *ChartDownloader) DownloadTo(ref, version, dest string) (string, *proven
 
 	scheme := ""
 
-	if gitutil.IsGitURL(ref) {
+	if gitutil.IsGitRepository(ref) {
 		scheme = "git"
 	} else {
 		scheme = u.Scheme
@@ -114,7 +114,7 @@ func (c *ChartDownloader) DownloadTo(ref, version, dest string) (string, *proven
 	}
 
 	name := filepath.Base(u.Path)
-	if u.Scheme == registry.OCIScheme || u.Scheme == "git" {
+	if u.Scheme == registry.OCIScheme {
 		idx := strings.LastIndexByte(name, ':')
 		name = fmt.Sprintf("%s-%s.tgz", name[:idx], name[idx+1:])
 	}
@@ -208,8 +208,8 @@ func (c *ChartDownloader) getOciURI(ref, version string, u *url.URL) (*url.URL, 
 //   - If version is empty, this will return the URL for the latest version
 //   - If no version can be found, an error is returned
 func (c *ChartDownloader) ResolveChartVersion(ref, version string) (*url.URL, error) {
-	if gitutil.IsGitURL(ref) {
-		gitURL := strings.TrimPrefix(ref, "git://")
+	if gitutil.IsGitRepository(ref) {
+		gitURL := gitutil.RepositoryURLToGitURL(ref)
 		u, err := giturls.Parse(gitURL)
 		if err != nil {
 			return nil, errors.Errorf("invalid git URL format: %s", gitURL)

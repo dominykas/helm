@@ -17,8 +17,6 @@ package getter
 
 import (
 	"bytes"
-	"strings"
-
 	"fmt"
 	"os"
 	"path/filepath"
@@ -62,7 +60,7 @@ func (g *GitGetter) Get(href string, options ...Option) (*bytes.Buffer, error) {
 }
 
 func (g *GitGetter) get(href string) (*bytes.Buffer, error) {
-	gitURL := strings.TrimPrefix(href, "git://")
+	gitURL := gitutil.RepositoryURLToGitURL(href)
 	version := g.opts.version
 	chartName := g.opts.chartName
 	if version == "" {
