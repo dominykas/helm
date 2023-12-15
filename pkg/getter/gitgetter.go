@@ -27,7 +27,7 @@ import (
 	"helm.sh/helm/v3/internal/gitutil"
 )
 
-// GitGetter is the default HTTP(/S) backend handler
+// GitGetter is the default git backend handler
 type GitGetter struct {
 	opts options
 }

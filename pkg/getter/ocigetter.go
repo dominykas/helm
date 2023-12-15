@@ -29,7 +29,7 @@ import (
 	"helm.sh/helm/v3/pkg/registry"
 )
 
-// OCIGetter is the default HTTP(/S) backend handler
+// OCIGetter is the default OCI backend handler
 type OCIGetter struct {
 	opts      options
 	transport *http.Transport
