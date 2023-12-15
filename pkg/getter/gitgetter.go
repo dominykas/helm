@@ -26,6 +26,7 @@ import (
 	"github.com/Masterminds/vcs"
 
 	"helm.sh/helm/v3/internal/fileutil"
+	"helm.sh/helm/v3/internal/gitutil"
 )
 
 // GitGetter is the default HTTP(/S) backend handler

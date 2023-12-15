@@ -29,6 +29,7 @@ import (
 	giturls "github.com/whilp/git-urls"
 
 	"helm.sh/helm/v3/internal/fileutil"
+	"helm.sh/helm/v3/internal/gitutil"
 	"helm.sh/helm/v3/internal/urlutil"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/helmpath"
@@ -96,7 +97,7 @@ func (c *ChartDownloader) DownloadTo(ref, version, dest string) (string, *proven
 
 	scheme := ""
 
-	if strings.HasPrefix(ref, "git://") {
+	if gitutil.IsGitURL(ref) {
 		scheme = "git"
 	} else {
 		scheme = u.Scheme
@@ -207,7 +208,7 @@ func (c *ChartDownloader) getOciURI(ref, version string, u *url.URL) (*url.URL, 
 //   - If version is empty, this will return the URL for the latest version
 //   - If no version can be found, an error is returned
 func (c *ChartDownloader) ResolveChartVersion(ref, version string) (*url.URL, error) {
-	if strings.HasPrefix(ref, "git://") {
+	if gitutil.IsGitURL(ref) {
 		gitURL := strings.TrimPrefix(ref, "git://")
 		u, err := giturls.Parse(gitURL)
 		if err != nil {

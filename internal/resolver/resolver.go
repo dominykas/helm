@@ -27,16 +27,16 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/pkg/errors"
 
+	"helm.sh/helm/v3/internal/gitutil"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/gitutils"
 	"helm.sh/helm/v3/pkg/helmpath"
 	"helm.sh/helm/v3/pkg/provenance"
 	"helm.sh/helm/v3/pkg/registry"
 	"helm.sh/helm/v3/pkg/repo"
 )
 
-var hasGitReference = gitutils.HasGitReference
+var hasGitReference = gitutil.HasGitReference
 
 // Resolver resolves dependencies from semantic version ranges to a particular version.
 type Resolver struct {
@@ -110,7 +110,7 @@ func (r *Resolver) Resolve(reqs []*chart.Dependency, repoNames map[string]string
 			continue
 		}
 
-		if strings.HasPrefix(d.Repository, "git://") {
+		if gitutil.IsGitURL(d.Repository) {
 
 			found, err := hasGitReference(strings.TrimPrefix(d.Repository, "git://"), d.Version, d.Name)
 
