@@ -28,12 +28,29 @@ func TestIsGitUrl(t *testing.T) {
 	}{
 		{"oci://example.com/example/chart", false},
 		{"git://example.com/example/chart", true},
-		{"git://https://example.com/example/chart", true},
+		{"git+https://example.com/example/chart", true},
 	}
 
 	for _, test := range tests {
 		if IsGitRepository(test.url) != test.expect {
 			t.Errorf("Expected %t for %s", test.expect, test.url)
+		}
+	}
+}
+
+func TestRepositoryURLToGitURL(t *testing.T) {
+	// Test table: Given url, RepositoryURLToGitURL should return expect.
+	tests := []struct {
+		url    string
+		expect string
+	}{
+		{"git://example.com/example/chart", "git://example.com/example/chart"},
+		{"git+https://example.com/example/chart", "https://example.com/example/chart"},
+	}
+
+	for _, test := range tests {
+		if RepositoryURLToGitURL(test.url) != test.expect {
+			t.Errorf("Expected %s for %s", test.expect, test.url)
 		}
 	}
 }

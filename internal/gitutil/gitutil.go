@@ -18,10 +18,13 @@ package gitutil
 
 import (
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/Masterminds/vcs"
 )
+
+var gitRepositoryURLRe = regexp.MustCompile(`^git(\+\w+)?://`)
 
 // HasGitReference returns true if a git repository contains a specified ref (branch/tag)
 func HasGitReference(gitRepo, ref, repoName string) (bool, error) {
@@ -44,10 +47,10 @@ func HasGitReference(gitRepo, ref, repoName string) (bool, error) {
 
 // IsGitRepository determines whether a URL is to be treated as a git repository URL
 func IsGitRepository(url string) bool {
-	return strings.HasPrefix(url, "git://")
+	return gitRepositoryURLRe.MatchString(url)
 }
 
 // RepositoryURLToGitURL converts a repository URL into a URL that `git clone` could consume
 func RepositoryURLToGitURL(url string) string {
-	return strings.TrimPrefix(url, "git://")
+	return strings.TrimPrefix(url, "git+")
 }

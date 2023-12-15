@@ -149,11 +149,11 @@ func TestResolve(t *testing.T) {
 		{
 			name: "repo from git https url",
 			req: []*chart.Dependency{
-				{Name: "gitdependencyok", Repository: "git://https://github.com/helm/helmchart.git", Version: "1.0.0"},
+				{Name: "gitdependencyok", Repository: "git+https://github.com/helm/helmchart.git", Version: "1.0.0"},
 			},
 			expect: &chart.Lock{
 				Dependencies: []*chart.Dependency{
-					{Name: "gitdependencyok", Repository: "git://https://github.com/helm/helmchart.git", Version: "1.0.0"},
+					{Name: "gitdependencyok", Repository: "git+https://github.com/helm/helmchart.git", Version: "1.0.0"},
 				},
 			},
 			err: false,
@@ -161,11 +161,11 @@ func TestResolve(t *testing.T) {
 		{
 			name: "repo from git https url",
 			req: []*chart.Dependency{
-				{Name: "gitdependencyerror", Repository: "git://https://github.com/helm/helmchart.git", Version: "2.0.0"},
+				{Name: "gitdependencyerror", Repository: "git+https://github.com/helm/helmchart.git", Version: "2.0.0"},
 			},
 			expect: &chart.Lock{
 				Dependencies: []*chart.Dependency{
-					{Name: "gitdependencyerror", Repository: "git://https://github.com/helm/helmchart.git", Version: "2.0.0"},
+					{Name: "gitdependencyerror", Repository: "git+https://github.com/helm/helmchart.git", Version: "2.0.0"},
 				},
 			},
 			err: true,
@@ -173,11 +173,11 @@ func TestResolve(t *testing.T) {
 		{
 			name: "repo from git ssh url",
 			req: []*chart.Dependency{
-				{Name: "gitdependency", Repository: "git://git@github.com:helm/helmchart.git", Version: "1.0.0"},
+				{Name: "gitdependency", Repository: "git://github.com:helm/helmchart.git", Version: "1.0.0"},
 			},
 			expect: &chart.Lock{
 				Dependencies: []*chart.Dependency{
-					{Name: "gitdependency", Repository: "git://git@github.com:helm/helmchart.git", Version: "1.0.0"},
+					{Name: "gitdependency", Repository: "git://github.com:helm/helmchart.git", Version: "1.0.0"},
 				},
 			},
 			err: false,
@@ -185,11 +185,11 @@ func TestResolve(t *testing.T) {
 		{
 			name: "repo from git ssh url",
 			req: []*chart.Dependency{
-				{Name: "gitdependencyerror", Repository: "git://git@github.com:helm/helmchart.git", Version: "2.0.0"},
+				{Name: "gitdependencyerror", Repository: "git://github.com:helm/helmchart.git", Version: "2.0.0"},
 			},
 			expect: &chart.Lock{
 				Dependencies: []*chart.Dependency{
-					{Name: "gitdependencyerror", Repository: "git://git@github.com:helm/helmchart.git", Version: "2.0.0"},
+					{Name: "gitdependencyerror", Repository: "git://github.com:helm/helmchart.git", Version: "2.0.0"},
 				},
 			},
 			err: true,
