@@ -484,13 +484,8 @@ func (m *Manager) hasAllRepos(deps []*chart.Dependency) error {
 	missing := []string{}
 Loop:
 	for _, dd := range deps {
-		// If repo is from local path or OCI, continue
-		if strings.HasPrefix(dd.Repository, "file://") || registry.IsOCI(dd.Repository) {
-			continue
-		}
-
-		// If repo is from git url, continue
-		if gitutil.IsGitRepository(dd.Repository) {
+		// If repo is from local path, OCI or a git url, continue - there is no local repo cache to check
+		if strings.HasPrefix(dd.Repository, "file://") || registry.IsOCI(dd.Repository) || gitutil.IsGitRepository(dd.Repository) {
 			continue
 		}
 
