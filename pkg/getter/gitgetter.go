@@ -21,9 +21,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
+
 	"github.com/Masterminds/vcs"
 
-	"helm.sh/helm/v3/internal/fileutil"
 	"helm.sh/helm/v3/internal/gitutil"
 )
 
@@ -34,21 +36,6 @@ type GitGetter struct {
 
 func (g *GitGetter) ChartName() string {
 	return g.opts.chartName
-}
-
-// ensureGitDirIgnored will append ".git/" to the .helmignore file in a directory.
-// Create the .helmignore file if it does not exist.
-func (g *GitGetter) ensureGitDirIgnored(repoPath string) error {
-	helmignorePath := filepath.Join(repoPath, ".helmignore")
-	f, err := os.OpenFile(helmignorePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	if _, err := f.WriteString("\n.git/\n"); err != nil {
-		return err
-	}
-	return nil
 }
 
 // Get performs a Get from repo.Getter and returns the body.
@@ -88,16 +75,18 @@ func (g *GitGetter) get(href string) (*bytes.Buffer, error) {
 		return nil, err
 	}
 
-	// A .helmignore that includes an ignore for .git/ should be included in the git repo itself,
-	// but a lot of people will probably not think about that.
-	// To prevent the git history from bleeding into the charts archive, append/create .helmignore.
-	g.ensureGitDirIgnored(chartTmpDir)
-
-	buf, err := fileutil.CompressDirToTgz(chartTmpDir, tmpDir)
+	ch, err := loader.LoadDir(chartTmpDir)
 	if err != nil {
-		return nil, fmt.Errorf("unable to tar and compress dir %s to tgz file. %s", tmpDir, err)
+		return nil, err
 	}
-	return buf, nil
+
+	tarballPath, err := chartutil.Save(ch, tmpDir)
+	if err != nil {
+		return nil, err
+	}
+
+	buf, err := os.ReadFile(tarballPath)
+	return bytes.NewBuffer(buf), err
 }
 
 // NewGitGetter constructs a valid git client as a Getter
