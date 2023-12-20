@@ -27,6 +27,7 @@ import (
 func fakeGitReference(gitRepo, ref, repoName string) (bool, error) {
 	gitRefs := map[string]string{
 		"1.0.0": "",
+		"main":  "",
 	}
 
 	_, found := gitRefs[ref]
@@ -194,6 +195,17 @@ func TestResolve(t *testing.T) {
 			},
 			expectError: `dependency "gitdependencyerror" is missing git branch or tag: 2.0.0.
 			When using a "git[+subprotocol]://" type repository, the "version" should be a valid branch or tag name`,
+		},
+		{
+			name: "repo from git with non-semver version",
+			req: []*chart.Dependency{
+				{Name: "gitdependencyok", Repository: "git+https://github.com/helm/helmchart.git", Version: "main"},
+			},
+			expect: &chart.Lock{
+				Dependencies: []*chart.Dependency{
+					{Name: "gitdependencyok", Repository: "git+https://github.com/helm/helmchart.git", Version: "main"},
+				},
+			},
 		},
 	}
 

@@ -61,9 +61,13 @@ func (r *Resolver) Resolve(reqs []*chart.Dependency, repoNames map[string]string
 	locked := make([]*chart.Dependency, len(reqs))
 	missing := []string{}
 	for i, d := range reqs {
-		constraint, err := semver.NewConstraint(d.Version)
-		if err != nil {
-			return nil, errors.Wrapf(err, "dependency %q has an invalid version/constraint format", d.Name)
+		var constraint *semver.Constraints
+		var err error
+		if !gitutil.IsGitRepository(d.Repository) {
+			constraint, err = semver.NewConstraint(d.Version)
+			if err != nil {
+				return nil, errors.Wrapf(err, "dependency %q has an invalid version/constraint format", d.Name)
+			}
 		}
 
 		if d.Repository == "" {
@@ -79,6 +83,7 @@ func (r *Resolver) Resolve(reqs []*chart.Dependency, repoNames map[string]string
 			}
 			continue
 		}
+
 		if strings.HasPrefix(d.Repository, "file://") {
 
 			chartpath, err := GetLocalPath(d.Repository, r.chartpath)
