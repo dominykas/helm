@@ -43,6 +43,7 @@ func TestResolveChartRef(t *testing.T) {
 		{name: "full URL, with authentication", ref: "http://username:password@example.com/foo-1.2.3.tgz", expect: "http://username:password@example.com/foo-1.2.3.tgz"},
 		{name: "helmchart", ref: "git+https://github.com/helmchart/helmchart.git", expect: "https://github.com/helmchart/helmchart.git"},
 		{name: "helmchart", ref: "git://github.com/helmchart/helmchart.git", expect: "git://github.com/helmchart/helmchart.git"},
+		{name: "helmchart", ref: "git+https://username:password@github.com/helmchart/helmchart.git", expectError: "git repository URL should not contain credentials - please use git credential helpers"},
 		{name: "reference, testing repo", ref: "testing/alpine", expect: "http://example.com/alpine-1.2.3.tgz"},
 		{name: "reference, version, testing repo", ref: "testing/alpine", version: "0.2.0", expect: "http://example.com/alpine-0.2.0.tgz"},
 		{name: "reference, version, malformed repo", ref: "malformed/alpine", version: "1.2.3", expect: "http://dl.example.com/alpine-1.2.3.tgz"},

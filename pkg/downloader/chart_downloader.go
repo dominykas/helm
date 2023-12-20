@@ -214,6 +214,9 @@ func (c *ChartDownloader) ResolveChartVersion(ref, version string) (*url.URL, er
 		if err != nil {
 			return nil, errors.Errorf("invalid git URL format: %s", gitURL)
 		}
+		if u.User != nil {
+			return nil, errors.Errorf("git repository URL should not contain credentials - please use git credential helpers")
+		}
 		return u, nil
 	}
 	u, err := url.Parse(ref)
