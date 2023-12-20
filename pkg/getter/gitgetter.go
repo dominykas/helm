@@ -47,7 +47,10 @@ func (g *GitGetter) Get(href string, options ...Option) (*bytes.Buffer, error) {
 }
 
 func (g *GitGetter) get(href string) (*bytes.Buffer, error) {
-	gitURL := gitutil.RepositoryURLToGitURL(href)
+	gitURL, err := gitutil.ParseGitRepositoryURL(href)
+	if err != nil {
+		return nil, err
+	}
 	version := g.opts.version
 	chartName := g.opts.chartName
 	if version == "" {
@@ -64,7 +67,7 @@ func (g *GitGetter) get(href string) (*bytes.Buffer, error) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	repo, err := vcs.NewRepo(gitURL, chartTmpDir)
+	repo, err := vcs.NewRepo(gitURL.GitRemoteURL.String(), chartTmpDir)
 	if err != nil {
 		return nil, err
 	}

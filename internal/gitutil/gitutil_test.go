@@ -38,19 +38,32 @@ func TestIsGitUrl(t *testing.T) {
 	}
 }
 
-func TestRepositoryURLToGitURL(t *testing.T) {
-	// Test table: Given url, RepositoryURLToGitURL should return expect.
+func TestParseGitRepositoryURL(t *testing.T) {
+	// Test table: Given url, ParseGitRepositoryURL should return expect.
 	tests := []struct {
-		url    string
-		expect string
+		url                    string
+		expectRepositoryURL    string
+		expectGitRepositoryURL string
 	}{
-		{"git://example.com/example/chart", "git://example.com/example/chart"},
-		{"git+https://example.com/example/chart", "https://example.com/example/chart"},
+		{
+			url:                    "git://example.com/example/chart",
+			expectRepositoryURL:    "git://example.com/example/chart",
+			expectGitRepositoryURL: "git://example.com/example/chart",
+		},
+		{
+			url:                    "git+https://example.com/example/chart",
+			expectRepositoryURL:    "git+https://example.com/example/chart",
+			expectGitRepositoryURL: "https://example.com/example/chart",
+		},
 	}
 
 	for _, test := range tests {
-		if RepositoryURLToGitURL(test.url) != test.expect {
-			t.Errorf("Expected %s for %s", test.expect, test.url)
+		parsed, _ := ParseGitRepositoryURL(test.url)
+		if parsed.RepositoryURL != test.expectRepositoryURL {
+			t.Errorf("Expected RepositoryURL %s for %s, but got %s", test.expectRepositoryURL, test.url, parsed)
+		}
+		if parsed.GitRemoteURL.String() != test.expectGitRepositoryURL {
+			t.Errorf("Expected GitRemoteURL %s for %s, but got %s", test.expectGitRepositoryURL, test.url, parsed)
 		}
 	}
 }

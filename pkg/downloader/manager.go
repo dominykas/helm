@@ -610,9 +610,6 @@ func (m *Manager) resolveRepoNames(deps []*chart.Dependency) (map[string]string,
 		// if the repo does not exist then it will later error when we try to fetch branches and tags.
 		// we could check for the repo existence here, but trying to avoid another git request.
 		if gitutil.IsGitRepository(dd.Repository) {
-			if m.Debug {
-				fmt.Fprintf(m.Out, "Repository from git url: %s\n", strings.TrimPrefix(dd.Repository, "git:"))
-			}
 			reposMap[dd.Name] = dd.Repository
 			continue
 		}

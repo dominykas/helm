@@ -26,8 +26,6 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/pkg/errors"
 
-	giturls "github.com/whilp/git-urls"
-
 	"helm.sh/helm/v3/internal/fileutil"
 	"helm.sh/helm/v3/internal/gitutil"
 	"helm.sh/helm/v3/internal/urlutil"
@@ -210,14 +208,11 @@ func (c *ChartDownloader) ResolveChartVersion(ref, version string) (*url.URL, er
 	}
 
 	if gitutil.IsGitRepository(ref) {
-		gitURL, gitURLErr := giturls.Parse(gitutil.RepositoryURLToGitURL(ref))
-		if gitURLErr != nil {
-			return nil, errors.Errorf("invalid git URL format: %s", ref)
+		_, err := gitutil.ParseGitRepositoryURL(ref)
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid git URL format: %s", ref)
 		}
-		if gitURL.User != nil {
-			return nil, errors.Errorf("git repository URL should not contain credentials - please use git credential helpers")
-		}
-		return u, nil
+		return u, err
 	}
 
 	rf, err := loadRepoConfig(c.RepositoryConfig)

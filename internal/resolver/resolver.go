@@ -117,8 +117,12 @@ func (r *Resolver) Resolve(reqs []*chart.Dependency, repoNames map[string]string
 
 		if gitutil.IsGitRepository(d.Repository) {
 
-			found, err := hasGitReference(gitutil.RepositoryURLToGitURL(d.Repository), d.Version)
+			gitURL, err := gitutil.ParseGitRepositoryURL(d.Repository)
+			if err != nil {
+				return nil, err
+			}
 
+			found, err := hasGitReference(gitURL.GitRemoteURL.String(), d.Version)
 			if err != nil {
 				return nil, err
 			}

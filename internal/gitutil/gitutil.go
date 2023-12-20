@@ -17,14 +17,23 @@ limitations under the License.
 package gitutil
 
 import (
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/pkg/errors"
+	giturls "github.com/whilp/git-urls"
 
 	"github.com/Masterminds/vcs"
 )
 
 var gitRepositoryURLRe = regexp.MustCompile(`^git(\+\w+)?://`)
+
+type GitRepositoryURL struct {
+	RepositoryURL string
+	GitRemoteURL  *url.URL
+}
 
 // HasGitReference returns true if a git repository contains a specified ref (branch/tag)
 func HasGitReference(gitRepo, ref string) (bool, error) {
@@ -50,7 +59,20 @@ func IsGitRepository(url string) bool {
 	return gitRepositoryURLRe.MatchString(url)
 }
 
-// RepositoryURLToGitURL converts a repository URL into a URL that `git clone` could consume
-func RepositoryURLToGitURL(url string) string {
-	return strings.TrimPrefix(url, "git+")
+// ParseGitRepositoryURL creates a new GitRepositoryURL from a string
+func ParseGitRepositoryURL(repositoryURL string) (*GitRepositoryURL, error) {
+	gitRemoteURL, err := giturls.Parse(strings.TrimPrefix(repositoryURL, "git+"))
+
+	if err != nil {
+		return nil, err
+	}
+
+	if gitRemoteURL.User != nil {
+		return nil, errors.Errorf("git repository URL should not contain credentials - please use git credential helpers")
+	}
+
+	return &GitRepositoryURL{
+		RepositoryURL: repositoryURL,
+		GitRemoteURL:  gitRemoteURL,
+	}, err
 }
