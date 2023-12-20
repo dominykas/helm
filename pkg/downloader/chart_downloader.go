@@ -95,15 +95,7 @@ func (c *ChartDownloader) DownloadTo(ref, version, dest string) (string, *proven
 		return "", nil, err
 	}
 
-	scheme := ""
-
-	if gitutil.IsGitRepository(ref) {
-		scheme = "git"
-	} else {
-		scheme = u.Scheme
-	}
-
-	g, err := c.Getters.ByScheme(scheme)
+	g, err := c.Getters.ByScheme(u.Scheme)
 	if err != nil {
 		return "", nil, err
 	}
@@ -118,7 +110,7 @@ func (c *ChartDownloader) DownloadTo(ref, version, dest string) (string, *proven
 		idx := strings.LastIndexByte(name, ':')
 		name = fmt.Sprintf("%s-%s.tgz", name[:idx], name[idx+1:])
 	}
-	if scheme == "git" {
+	if gitutil.IsGitRepository(ref) {
 		gitGetter, ok := g.(*getter.GitGetter)
 		if !ok {
 			return "", nil, fmt.Errorf("can't convert to GITGetter")
@@ -208,17 +200,6 @@ func (c *ChartDownloader) getOciURI(ref, version string, u *url.URL) (*url.URL, 
 //   - If version is empty, this will return the URL for the latest version
 //   - If no version can be found, an error is returned
 func (c *ChartDownloader) ResolveChartVersion(ref, version string) (*url.URL, error) {
-	if gitutil.IsGitRepository(ref) {
-		gitURL := gitutil.RepositoryURLToGitURL(ref)
-		u, err := giturls.Parse(gitURL)
-		if err != nil {
-			return nil, errors.Errorf("invalid git URL format: %s", gitURL)
-		}
-		if u.User != nil {
-			return nil, errors.Errorf("git repository URL should not contain credentials - please use git credential helpers")
-		}
-		return u, nil
-	}
 	u, err := url.Parse(ref)
 	if err != nil {
 		return nil, errors.Errorf("invalid chart URL format: %s", ref)
@@ -226,6 +207,17 @@ func (c *ChartDownloader) ResolveChartVersion(ref, version string) (*url.URL, er
 
 	if registry.IsOCI(u.String()) {
 		return c.getOciURI(ref, version, u)
+	}
+
+	if gitutil.IsGitRepository(ref) {
+		gitURL, gitURLErr := giturls.Parse(gitutil.RepositoryURLToGitURL(ref))
+		if gitURLErr != nil {
+			return nil, errors.Errorf("invalid git URL format: %s", ref)
+		}
+		if gitURL.User != nil {
+			return nil, errors.Errorf("git repository URL should not contain credentials - please use git credential helpers")
+		}
+		return u, nil
 	}
 
 	rf, err := loadRepoConfig(c.RepositoryConfig)

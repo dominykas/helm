@@ -208,7 +208,7 @@ var ociProvider = Provider{
 }
 
 var gitProvider = Provider{
-	Schemes: []string{"git"},
+	Schemes: []string{"git", "git+http", "git+https", "git+rsync", "git+ftp", "git+file", "git+ssh"},
 	New:     NewGitGetter,
 }
 
