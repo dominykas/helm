@@ -27,8 +27,8 @@ import (
 var gitRepositoryURLRe = regexp.MustCompile(`^git(\+\w+)?://`)
 
 // HasGitReference returns true if a git repository contains a specified ref (branch/tag)
-func HasGitReference(gitRepo, ref, repoName string) (bool, error) {
-	local, err := os.MkdirTemp("", repoName)
+func HasGitReference(gitRepo, ref string) (bool, error) {
+	local, err := os.MkdirTemp("", "helm-git-")
 	if err != nil {
 		return false, err
 	}

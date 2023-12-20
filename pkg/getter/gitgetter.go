@@ -66,7 +66,7 @@ func (g *GitGetter) get(href string) (*bytes.Buffer, error) {
 	if version == "" {
 		return nil, fmt.Errorf("the version must be a valid tag or branch name for the git repo, not nil")
 	}
-	tmpDir, err := os.MkdirTemp("", "helm")
+	tmpDir, err := os.MkdirTemp("", "helm-git-")
 	if err != nil {
 		return nil, err
 	}

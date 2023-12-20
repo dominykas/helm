@@ -24,7 +24,7 @@ import (
 	"helm.sh/helm/v3/pkg/registry"
 )
 
-func fakeGitReference(gitRepo, ref, repoName string) (bool, error) {
+func fakeGitReference(_, ref string) (bool, error) {
 	gitRefs := map[string]string{
 		"1.0.0": "",
 		"main":  "",
