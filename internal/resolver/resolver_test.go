@@ -16,6 +16,7 @@ limitations under the License.
 package resolver
 
 import (
+	"fmt"
 	"runtime"
 	"testing"
 
@@ -34,10 +35,10 @@ func fakeGitReference(gitRepo, ref, repoName string) (bool, error) {
 func TestResolve(t *testing.T) {
 	hasGitReference = fakeGitReference
 	tests := []struct {
-		name   string
-		req    []*chart.Dependency
-		expect *chart.Lock
-		err    bool
+		name        string
+		req         []*chart.Dependency
+		expect      *chart.Lock
+		expectError string
 	}{
 		{
 			name: "repo from invalid version",
@@ -49,14 +50,14 @@ func TestResolve(t *testing.T) {
 					{Name: "base", Repository: "file://base", Version: "0.1.0"},
 				},
 			},
-			err: true,
+			expectError: "can't get a valid version for repositories base. Try changing the version constraint in Chart.yaml",
 		},
 		{
 			name: "version failure",
 			req: []*chart.Dependency{
 				{Name: "oedipus-rex", Repository: "http://example.com", Version: ">a1"},
 			},
-			err: true,
+			expectError: `dependency "oedipus-rex" has an invalid version/constraint format: improper constraint: >a1`,
 		},
 		{
 			name: "cache index failure",
@@ -74,14 +75,14 @@ func TestResolve(t *testing.T) {
 			req: []*chart.Dependency{
 				{Name: "redis", Repository: "http://example.com", Version: "1.0.0"},
 			},
-			err: true,
+			expectError: "redis chart not found in repo http://example.com",
 		},
 		{
 			name: "constraint not satisfied failure",
 			req: []*chart.Dependency{
 				{Name: "alpine", Repository: "http://example.com", Version: ">=1.0.0"},
 			},
-			err: true,
+			expectError: "can't get a valid version for repositories alpine. Try changing the version constraint in Chart.yaml",
 		},
 		{
 			name: "valid lock",
@@ -121,7 +122,7 @@ func TestResolve(t *testing.T) {
 			req: []*chart.Dependency{
 				{Name: "nonexistent", Repository: "file://testdata/nonexistent", Version: "0.1.0"},
 			},
-			err: true,
+			expectError: "directory testdata/chartpath/testdata/nonexistent not found",
 		},
 		{
 			name: "repo from valid path under charts path",
@@ -144,7 +145,7 @@ func TestResolve(t *testing.T) {
 					{Name: "nonexistentlocaldependency", Repository: "", Version: "0.1.0"},
 				},
 			},
-			err: true,
+			expectError: "directory testdata/chartpath/charts/nonexistentdependency not found",
 		},
 		{
 			name: "repo from git https url",
@@ -156,7 +157,6 @@ func TestResolve(t *testing.T) {
 					{Name: "gitdependencyok", Repository: "git+https://github.com/helm/helmchart.git", Version: "1.0.0"},
 				},
 			},
-			err: false,
 		},
 		{
 			name: "repo from git https url",
@@ -168,7 +168,8 @@ func TestResolve(t *testing.T) {
 					{Name: "gitdependencyerror", Repository: "git+https://github.com/helm/helmchart.git", Version: "2.0.0"},
 				},
 			},
-			err: true,
+			expectError: `dependency "gitdependencyerror" is missing git branch or tag: 2.0.0.
+			When using a "git[+subprotocol]://" type repository, the "version" should be a valid branch or tag name`,
 		},
 		{
 			name: "repo from git ssh url",
@@ -180,7 +181,6 @@ func TestResolve(t *testing.T) {
 					{Name: "gitdependency", Repository: "git://github.com:helm/helmchart.git", Version: "1.0.0"},
 				},
 			},
-			err: false,
 		},
 		{
 			name: "repo from git ssh url",
@@ -192,7 +192,8 @@ func TestResolve(t *testing.T) {
 					{Name: "gitdependencyerror", Repository: "git://github.com:helm/helmchart.git", Version: "2.0.0"},
 				},
 			},
-			err: true,
+			expectError: `dependency "gitdependencyerror" is missing git branch or tag: 2.0.0.
+			When using a "git[+subprotocol]://" type repository, the "version" should be a valid branch or tag name`,
 		},
 	}
 
@@ -202,15 +203,16 @@ func TestResolve(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			l, err := r.Resolve(tt.req, repoNames)
-			if err != nil {
-				if tt.err {
-					return
+
+			if tt.expectError != "" {
+				if tt.expectError != fmt.Sprint(err) {
+					t.Errorf("%s: expected error %q, got %q", tt.name, tt.expectError, err)
 				}
-				t.Fatal(err)
+				return
 			}
 
-			if tt.err {
-				t.Fatalf("Expected error in test %q", tt.name)
+			if err != nil {
+				t.Fatal(err)
 			}
 
 			if h, err := HashReq(tt.req, tt.expect.Dependencies); err != nil {
