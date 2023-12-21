@@ -41,29 +41,39 @@ func TestIsGitUrl(t *testing.T) {
 func TestParseGitRepositoryURL(t *testing.T) {
 	// Test table: Given url, ParseGitRepositoryURL should return expect.
 	tests := []struct {
-		url                    string
-		expectRepositoryURL    string
-		expectGitRepositoryURL string
+		url                            string
+		expectRepositoryURL            string
+		expectGitRemoteURL             string
+		expectedPathUnderGitRepository string
 	}{
 		{
-			url:                    "git://example.com/example/chart",
-			expectRepositoryURL:    "git://example.com/example/chart",
-			expectGitRepositoryURL: "git://example.com/example/chart",
+			url:                 "git://example.com/example/chart",
+			expectRepositoryURL: "git://example.com/example/chart",
+			expectGitRemoteURL:  "git://example.com/example/chart",
 		},
 		{
-			url:                    "git+https://example.com/example/chart",
-			expectRepositoryURL:    "git+https://example.com/example/chart",
-			expectGitRepositoryURL: "https://example.com/example/chart",
+			url:                 "git+https://example.com/example/chart",
+			expectRepositoryURL: "git+https://example.com/example/chart",
+			expectGitRemoteURL:  "https://example.com/example/chart",
+		},
+		{
+			url:                            "git+https://example.com/example/chart#subdirectory=charts/some-chart",
+			expectRepositoryURL:            "git+https://example.com/example/chart#subdirectory=charts/some-chart",
+			expectGitRemoteURL:             "https://example.com/example/chart",
+			expectedPathUnderGitRepository: "charts/some-chart",
 		},
 	}
 
 	for _, test := range tests {
 		parsed, _ := ParseGitRepositoryURL(test.url)
 		if parsed.RepositoryURL != test.expectRepositoryURL {
-			t.Errorf("Expected RepositoryURL %s for %s, but got %s", test.expectRepositoryURL, test.url, parsed)
+			t.Errorf("Expected RepositoryURL %s for %s, but got %s", test.expectRepositoryURL, test.url, parsed.RepositoryURL)
 		}
-		if parsed.GitRemoteURL.String() != test.expectGitRepositoryURL {
-			t.Errorf("Expected GitRemoteURL %s for %s, but got %s", test.expectGitRepositoryURL, test.url, parsed)
+		if parsed.GitRemoteURL.String() != test.expectGitRemoteURL {
+			t.Errorf("Expected GitRemoteURL %s for %s, but got %s", test.expectGitRemoteURL, test.url, parsed.GitRemoteURL)
+		}
+		if parsed.PathUnderGitRepository != test.expectedPathUnderGitRepository {
+			t.Errorf("Expected PathUnderGitRepository %s for %s, but got %s", test.expectGitRemoteURL, test.url, parsed.PathUnderGitRepository)
 		}
 	}
 }

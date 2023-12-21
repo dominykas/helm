@@ -19,12 +19,12 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 
 	"github.com/Masterminds/vcs"
+	securejoin "github.com/cyphar/filepath-securejoin"
 
 	"helm.sh/helm/v3/internal/gitutil"
 )
@@ -60,14 +60,18 @@ func (g *GitGetter) get(href string) (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, err
 	}
-	chartTmpDir := filepath.Join(tmpDir, chartName)
 
-	if err := os.MkdirAll(chartTmpDir, 0755); err != nil {
+	gitTmpDir, err := securejoin.SecureJoin(tmpDir, chartName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := os.MkdirAll(gitTmpDir, 0755); err != nil {
 		return nil, err
 	}
 	defer os.RemoveAll(tmpDir)
 
-	repo, err := vcs.NewRepo(gitURL.GitRemoteURL.String(), chartTmpDir)
+	repo, err := vcs.NewRepo(gitURL.GitRemoteURL.String(), gitTmpDir)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +82,12 @@ func (g *GitGetter) get(href string) (*bytes.Buffer, error) {
 		return nil, err
 	}
 
-	ch, err := loader.LoadDir(chartTmpDir)
+	chartDir, err := securejoin.SecureJoin(gitTmpDir, gitURL.PathUnderGitRepository)
+	if err != nil {
+		return nil, err
+	}
+
+	ch, err := loader.LoadDir(chartDir)
 	if err != nil {
 		return nil, err
 	}

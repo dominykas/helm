@@ -31,8 +31,9 @@ import (
 var gitRepositoryURLRe = regexp.MustCompile(`^git(\+\w+)?://`)
 
 type GitRepositoryURL struct {
-	RepositoryURL string
-	GitRemoteURL  *url.URL
+	RepositoryURL          string
+	GitRemoteURL           *url.URL
+	PathUnderGitRepository string
 }
 
 // HasGitReference returns true if a git repository contains a specified ref (branch/tag)
@@ -71,8 +72,22 @@ func ParseGitRepositoryURL(repositoryURL string) (*GitRepositoryURL, error) {
 		return nil, errors.Errorf("git repository URL should not contain credentials - please use git credential helpers")
 	}
 
+	path := ""
+
+	if gitRemoteURL.Fragment != "" {
+		query, err := url.ParseQuery(gitRemoteURL.Fragment)
+		if err != nil {
+			return nil, err
+		}
+
+		path = query.Get("subdirectory")
+	}
+
+	gitRemoteURL.Fragment = ""
+
 	return &GitRepositoryURL{
-		RepositoryURL: repositoryURL,
-		GitRemoteURL:  gitRemoteURL,
+		RepositoryURL:          repositoryURL,
+		GitRemoteURL:           gitRemoteURL,
+		PathUnderGitRepository: path,
 	}, err
 }
