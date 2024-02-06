@@ -16,6 +16,7 @@ limitations under the License.
 package downloader
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -35,11 +36,14 @@ const (
 func TestResolveChartRef(t *testing.T) {
 	tests := []struct {
 		name, ref, expect, version string
-		fail                       bool
+		expectError                string
 	}{
 		{name: "full URL", ref: "http://example.com/foo-1.2.3.tgz", expect: "http://example.com/foo-1.2.3.tgz"},
 		{name: "full URL, HTTPS", ref: "https://example.com/foo-1.2.3.tgz", expect: "https://example.com/foo-1.2.3.tgz"},
 		{name: "full URL, with authentication", ref: "http://username:password@example.com/foo-1.2.3.tgz", expect: "http://username:password@example.com/foo-1.2.3.tgz"},
+		{name: "helmchart", ref: "git+https://github.com/helmchart/helmchart.git", expect: "git+https://github.com/helmchart/helmchart.git"},
+		{name: "helmchart", ref: "git://github.com/helmchart/helmchart.git", expect: "git://github.com/helmchart/helmchart.git"},
+		{name: "helmchart", ref: "git+https://username:password@github.com/helmchart/helmchart.git", expectError: "invalid git URL format: git+https://username:password@github.com/helmchart/helmchart.git: git repository URL should not contain credentials - please use git credential helpers"},
 		{name: "reference, testing repo", ref: "testing/alpine", expect: "http://example.com/alpine-1.2.3.tgz"},
 		{name: "reference, version, testing repo", ref: "testing/alpine", version: "0.2.0", expect: "http://example.com/alpine-0.2.0.tgz"},
 		{name: "reference, version, malformed repo", ref: "malformed/alpine", version: "1.2.3", expect: "http://dl.example.com/alpine-1.2.3.tgz"},
@@ -49,10 +53,10 @@ func TestResolveChartRef(t *testing.T) {
 		{name: "reference, testing-relative-trailing-slash repo", ref: "testing-relative-trailing-slash/foo", expect: "http://example.com/helm/charts/foo-1.2.3.tgz"},
 		{name: "reference, testing-relative-trailing-slash repo", ref: "testing-relative-trailing-slash/bar", expect: "http://example.com/helm/bar-1.2.3.tgz"},
 		{name: "encoded URL", ref: "encoded-url/foobar", expect: "http://example.com/with%2Fslash/charts/foobar-4.2.1.tgz"},
-		{name: "full URL, HTTPS, irrelevant version", ref: "https://example.com/foo-1.2.3.tgz", version: "0.1.0", expect: "https://example.com/foo-1.2.3.tgz", fail: true},
-		{name: "full URL, file", ref: "file:///foo-1.2.3.tgz", fail: true},
-		{name: "invalid", ref: "invalid-1.2.3", fail: true},
-		{name: "not found", ref: "nosuchthing/invalid-1.2.3", fail: true},
+		{name: "full URL, HTTPS, irrelevant version", ref: "https://example.com/foo-1.2.3.tgz", version: "0.1.0", expect: "https://example.com/foo-1.2.3.tgz"},
+		{name: "full URL, file", ref: "file:///foo-1.2.3.tgz", expectError: "repo  not found"},
+		{name: "invalid", ref: "invalid-1.2.3", expectError: "non-absolute URLs should be in form of repo_name/path_to_chart, got: invalid-1.2.3"},
+		{name: "not found", ref: "nosuchthing/invalid-1.2.3", expectError: "repo nosuchthing not found"},
 	}
 
 	c := ChartDownloader{
@@ -67,10 +71,13 @@ func TestResolveChartRef(t *testing.T) {
 
 	for _, tt := range tests {
 		u, err := c.ResolveChartVersion(tt.ref, tt.version)
-		if err != nil {
-			if tt.fail {
-				continue
+		if tt.expectError != "" {
+			if tt.expectError != fmt.Sprint(err) {
+				t.Errorf("%s: expected error %q, got %q", tt.name, tt.expectError, err)
 			}
+			continue
+		}
+		if err != nil {
 			t.Errorf("%s: failed with error %q", tt.name, err)
 			continue
 		}

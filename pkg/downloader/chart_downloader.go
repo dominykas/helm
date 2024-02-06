@@ -27,6 +27,7 @@ import (
 	"github.com/pkg/errors"
 
 	"helm.sh/helm/v3/internal/fileutil"
+	"helm.sh/helm/v3/internal/gitutil"
 	"helm.sh/helm/v3/internal/urlutil"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/helmpath"
@@ -107,6 +108,13 @@ func (c *ChartDownloader) DownloadTo(ref, version, dest string) (string, *proven
 		idx := strings.LastIndexByte(name, ':')
 		name = fmt.Sprintf("%s-%s.tgz", name[:idx], name[idx+1:])
 	}
+	if gitutil.IsGitRepository(ref) {
+		gitGetter, ok := g.(*getter.GitGetter)
+		if !ok {
+			return "", nil, fmt.Errorf("can't convert to GITGetter")
+		}
+		name = fmt.Sprintf("%s-%s.tgz", gitGetter.ChartName(), version)
+	}
 
 	destfile := filepath.Join(dest, name)
 	if err := fileutil.AtomicWriteFile(destfile, data, 0644); err != nil {
@@ -180,7 +188,7 @@ func (c *ChartDownloader) getOciURI(ref, version string, u *url.URL) (*url.URL, 
 // the URL using the appropriate Getter.
 //
 // A reference may be an HTTP URL, an oci reference URL, a 'reponame/chartname'
-// reference, or a local path.
+// reference, git URL, or a local path.
 //
 // A version is a SemVer string (1.2.3-beta.1+f334a6789).
 //
@@ -197,6 +205,14 @@ func (c *ChartDownloader) ResolveChartVersion(ref, version string) (*url.URL, er
 
 	if registry.IsOCI(u.String()) {
 		return c.getOciURI(ref, version, u)
+	}
+
+	if gitutil.IsGitRepository(ref) {
+		_, err := gitutil.ParseGitRepositoryURL(ref)
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid git URL format: %s", ref)
+		}
+		return u, err
 	}
 
 	rf, err := loadRepoConfig(c.RepositoryConfig)

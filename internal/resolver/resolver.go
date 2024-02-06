@@ -27,6 +27,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/pkg/errors"
 
+	"helm.sh/helm/v3/internal/gitutil"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/helmpath"
@@ -34,6 +35,8 @@ import (
 	"helm.sh/helm/v3/pkg/registry"
 	"helm.sh/helm/v3/pkg/repo"
 )
+
+var hasGitReference = gitutil.HasGitReference
 
 // Resolver resolves dependencies from semantic version ranges to a particular version.
 type Resolver struct {
@@ -58,9 +61,13 @@ func (r *Resolver) Resolve(reqs []*chart.Dependency, repoNames map[string]string
 	locked := make([]*chart.Dependency, len(reqs))
 	missing := []string{}
 	for i, d := range reqs {
-		constraint, err := semver.NewConstraint(d.Version)
-		if err != nil {
-			return nil, errors.Wrapf(err, "dependency %q has an invalid version/constraint format", d.Name)
+		var constraint *semver.Constraints
+		var err error
+		if !gitutil.IsGitRepository(d.Repository) {
+			constraint, err = semver.NewConstraint(d.Version)
+			if err != nil {
+				return nil, errors.Wrapf(err, "dependency %q has an invalid version/constraint format", d.Name)
+			}
 		}
 
 		if d.Repository == "" {
@@ -76,6 +83,7 @@ func (r *Resolver) Resolve(reqs []*chart.Dependency, repoNames map[string]string
 			}
 			continue
 		}
+
 		if strings.HasPrefix(d.Repository, "file://") {
 
 			chartpath, err := GetLocalPath(d.Repository, r.chartpath)
@@ -103,6 +111,31 @@ func (r *Resolver) Resolve(reqs []*chart.Dependency, repoNames map[string]string
 				Name:       d.Name,
 				Repository: d.Repository,
 				Version:    ch.Metadata.Version,
+			}
+			continue
+		}
+
+		if gitutil.IsGitRepository(d.Repository) {
+
+			gitURL, err := gitutil.ParseGitRepositoryURL(d.Repository)
+			if err != nil {
+				return nil, err
+			}
+
+			found, err := hasGitReference(gitURL.GitRemoteURL.String(), d.Version)
+			if err != nil {
+				return nil, err
+			}
+
+			if !found {
+				return nil, fmt.Errorf(`dependency %q is missing git branch or tag: %s.
+			When using a "git[+subprotocol]://" type repository, the "version" should be a valid branch or tag name`, d.Name, d.Version)
+			}
+
+			locked[i] = &chart.Dependency{
+				Name:       d.Name,
+				Repository: d.Repository,
+				Version:    d.Version,
 			}
 			continue
 		}
